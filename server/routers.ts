@@ -1,28 +1,67 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import {
+  createProduct,
+  deleteProduct,
+  getInventorySummary,
+  listProducts,
+  updateProduct,
+} from "./db";
+
+const productInput = z.object({
+  name: z.string().trim().min(1).max(180),
+  barcode: z.string().trim().max(80).optional().or(z.literal("")),
+  category: z.string().trim().min(1).max(100),
+  unit: z.string().trim().min(1).max(24),
+  quantity: z.coerce.number().min(0),
+  minStock: z.coerce.number().min(0),
+  purchasePrice: z.coerce.number().min(0),
+  sellingPrice: z.coerce.number().min(0),
+});
+
+const productValues = (input: z.infer<typeof productInput>) => ({
+  name: input.name,
+  barcode: input.barcode || null,
+  category: input.category,
+  unit: input.unit,
+  quantity: input.quantity.toFixed(3),
+  minStock: input.minStock.toFixed(3),
+  purchasePrice: input.purchasePrice.toFixed(2),
+  sellingPrice: input.sellingPrice.toFixed(2),
+});
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  products: router({
+    list: protectedProcedure
+      .input(z.object({ search: z.string().optional() }))
+      .query(({ input }) => listProducts(input.search)),
+    summary: protectedProcedure.query(() => getInventorySummary()),
+    create: protectedProcedure
+      .input(productInput)
+      .mutation(({ input }) => createProduct(productValues(input))),
+    update: protectedProcedure
+      .input(productInput.extend({ id: z.number().int().positive() }))
+      .mutation(({ input }) => {
+        const { id, ...values } = input;
+        return updateProduct(id, productValues(values));
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input }) => deleteProduct(input.id)),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
