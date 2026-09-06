@@ -15,6 +15,13 @@
       "when": 1788686742084,
       "tag": "0001_amazing_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1788687069455,
+      "tag": "0002_striped_sharon_carter",
+      "breakpoints": true
     }
   ]
 }

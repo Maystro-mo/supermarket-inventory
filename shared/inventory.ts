@@ -15,3 +15,11 @@ export function isLowStock(quantity: string | number, minStock: string | number)
   const minimum = toNumber(minStock);
   return minimum > 0 && toNumber(quantity) <= minimum;
 }
+
+export function calculateVariance(systemQuantity: string | number, countedQuantity: string | number): number {
+  return toNumber(countedQuantity) - toNumber(systemQuantity);
+}
+
+export function calculateVarianceValue(variance: string | number, purchasePrice: string | number): number {
+  return toNumber(variance) * toNumber(purchasePrice);
+}

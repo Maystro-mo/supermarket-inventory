@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateRetailValue, calculateStockValue, isLowStock, toNumber } from "../shared/inventory";
+import { calculateRetailValue, calculateStockValue, calculateVariance, calculateVarianceValue, isLowStock, toNumber } from "../shared/inventory";
 
 describe("inventory calculations", () => {
   it("calculates purchase stock value from quantity and unit cost", () => {
@@ -19,5 +19,10 @@ describe("inventory calculations", () => {
   it("normalizes invalid numeric input to zero", () => {
     expect(toNumber("not-a-number")).toBe(0);
     expect(toNumber(undefined)).toBe(0);
+  });
+
+  it("calculates signed stock-take variance and its purchase value", () => {
+    expect(calculateVariance(10, 8)).toBe(-2);
+    expect(calculateVarianceValue(-2, 4.5)).toBeCloseTo(-9);
   });
 });
